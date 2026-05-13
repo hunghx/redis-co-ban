@@ -1,12 +1,16 @@
 package ra.demoredis.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import ra.demoredis.dto.ApiResponse;
 import ra.demoredis.dto.ProductDto;
 import ra.demoredis.entity.Product;
 import ra.demoredis.repository.ProductRepository;
+
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -23,8 +27,7 @@ public class ProductService {
         return new ApiResponse((end-start)/1_000_000,dto);
 
     }
-
-
+//    @Cacheable(value = "product:", key = "#id")
     public ApiResponse getProductByIdWithRedis(Long id) {
         long start = System.nanoTime();
         String key = "product:"+id;
@@ -38,9 +41,13 @@ public class ProductService {
         // nếu chưa có : lấy từ db v lưu vào redis -> trả cho client
         // nếu  có rồi thì trả trực tiếp từ redis cho cleint
         Product entity = productRepository.findById(id).orElseThrow(() -> new RuntimeException("Product not found"));
-        redisTemplate.opsForValue().set(key,entity);
+        redisTemplate.opsForValue().set(key,entity, Duration.of(5, ChronoUnit.MINUTES));// 5phut
         ProductDto dto =  ProductDto.mapToDto(entity);
         long end = System.nanoTime();
         return new ApiResponse((end-start)/1_000_000, dto);
+
+
+        // nếu cachable ko tìm đc key tương ứng thì sẽ return về giá trị sẽ lưu vào cache
+//        return new ApiResponse(10,ProductDto.mapToDto(productRepository.findById(id).orElseThrow(() -> new RuntimeException("Id no found"))));
     }
 }

@@ -39,6 +39,11 @@ public class RedisConfig {
 
         template.afterPropertiesSet();
 
+        // OTP
+        // token : accessToken, RefreshToken, blackList
+
+
+
         return template;
     }
 }
